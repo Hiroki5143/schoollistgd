@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>School List</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Comic Sans MS", cursive;
+  }
+
+  body {
+    background-color: #11161C;
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    padding: 0 20px;
+    background-color: #464e57;
+  }
+
+  .nav-left,
+  .nav-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 16px;
+    color: #9BA8B5;
+    text-decoration: none;
+    font-size: 17px;
+    white-space: nowrap;
+    border-radius: 0; /* rectangle, no rounded edges */
+    transition: background-color 0.5s cubic-bezier(0.37, 0, 0.63, 1), color 0.3s cubic-bezier(0.37, 0, 0.63, 1);
+  }
+
+  .nav-item:hover {
+    background-color: #63B0F2;
+    color: #FFFFFF;
+  }
+</style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <a href="#" class="nav-item">SL</a>
+      <a href="#" class="nav-item">List</a>
+      <a href="#" class="nav-item">Players</a>
+    </div>
+    <div class="nav-right">
+      <a href="#" class="nav-item">Submit Record</a>
+      <a href="#" class="nav-item">Login</a>
+    </div>
+  </nav>
+
+</body>
+</html>
