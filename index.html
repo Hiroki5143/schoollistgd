@@ -60,9 +60,76 @@
     </div>
     <div class="nav-right">
       <a href="#" class="nav-item">Submit Record</a>
-      <a href="/auth/" class="nav-item">Login</a>
+      <a href="/auth/" class="nav-item" id="account-name">Login</a>
     </div>
   </nav>
+<script>
+  const API_URL = "https://worker-editor.hirokiuseunusedemail.workers.dev";
+  const accountName = document.getElementById("account-name");
+  const token = sessionStorage.getItem("auth_token");
 
+  async function checkLogin() {
+    if (!token) {
+      accountName.textContent = "Login";
+      accountName.href = "/auth/";
+      return;
+    }
+
+    try {
+      const response = await fetch(API_URL + "/me", {
+        method: "GET",
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.loggedIn) {
+        accountName.textContent = data.username;
+        accountName.href = "#";
+
+        accountName.addEventListener("click", function(e) {
+          e.preventDefault();
+
+          if (confirm("Log out?")) {
+            logout();
+          }
+        });
+      } else {
+        sessionStorage.removeItem("auth_token");
+        sessionStorage.removeItem("username");
+
+        accountName.textContent = "Login";
+        accountName.href = "/auth/";
+      }
+
+    } catch (error) {
+      console.error("Login check failed:", error);
+      accountName.textContent = "Login";
+      accountName.href = "/auth/";
+    }
+  }
+
+  async function logout() {
+    try {
+      await fetch(API_URL + "/logout", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("username");
+
+    window.location.href = "/";
+  }
+
+  checkLogin();
+</script>
 </body>
 </html>
