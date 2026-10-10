@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Percentage Bars</title>
+<style>
+:root{--bg:#11161C;--card:#18202A;--ink:#E6EEF5;--mute:#8A9AAB;--line:#273340;--track:#222D39;--fill:#63B0F2;--fill2:#2F6DA3;--bar:#3A7CB8;--warn:#F28B63;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Comic Sans MS",cursive;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:32px 18px 64px}
+h1{font-size:clamp(28px,6vw,40px);font-weight:800;margin:0 0 6px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 24px;max-width:56ch}
+button,input{font:inherit;color:inherit}
+.top{display:flex;gap:8px;margin-bottom:20px}
+.top input{flex:1;min-width:0}
+input[type=text]{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--fill);outline-offset:2px}
+.btn{background:var(--fill2);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.ghost{background:none;border:0;color:var(--mute);cursor:pointer;padding:4px 8px;border-radius:8px}
+.ghost:hover{color:var(--warn)}
+.bar{background:#000;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.head h2{font-size:18px;margin:0;font-weight:600;flex:1;overflow-wrap:anywhere}
+.total{font-size:30px;font-weight:800;color:var(--fill);font-variant-numeric:tabular-nums}
+.track{position:relative;height:34px;background:var(--track);border-radius:9px;overflow:hidden}
+.seg{position:absolute;top:0;bottom:0;background:var(--c);transition:left .25s,width .25s}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);margin:5px 1px 12px;font-variant-numeric:tabular-nums}
+input[type=color]{width:38px;height:34px;padding:2px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;cursor:pointer}
+.cc{width:20px;height:20px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;margin-right:6px}
+.cc::-webkit-color-swatch-wrapper{padding:0}.cc::-webkit-color-swatch{border:0;border-radius:50%}.cc::-moz-color-swatch{border:0;border-radius:50%}
+.add{display:flex;gap:8px}
+.add input{flex:1;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:2px;background:var(--track);border-radius:999px;padding:3px 4px 3px 12px;font-size:14px;font-variant-numeric:tabular-nums}
+.chip button{background:none;border:0;cursor:pointer;color:var(--mute);font-size:16px;line-height:1;padding:2px 7px;border-radius:50%}
+.chip button:hover{color:var(--warn)}
+.err{color:var(--warn);font-size:13px;min-height:18px;margin-top:6px}
+.empty{color:var(--mute);border:1.5px dashed var(--line);border-radius:16px;padding:28px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<h1>Percentage bars</h1>
+<p class="sub">Name a bar, then add as many ranges as you like, such as 0-25 and 50-100. Every range fills the same bar, and the total updates.</p>
+<div class="top">
+  <input type="text" id="newName" placeholder="Bar name, e.g. Project progress" aria-label="Bar name" maxlength="60">
+  <button class="btn" id="addBar">Add bar</button>
+</div>
+<div id="bars"></div>
+</main>
+<script>
+var bars=[],nid=1,KEY="pctbars-v1",D="#63B0F2";
+try{var s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.bars){bars=s.bars;nid=s.nid||bars.length+1}}catch(e){}
+bars.forEach(function(b){b.ranges.forEach(function(r){if(!r.color)r.color=b.color||D})});
+function save(){try{localStorage.setItem(KEY,JSON.stringify({bars:bars,nid:nid}))}catch(e){}}
+function union(r){var a=r.map(function(x){return[x.from,x.to]}).sort(function(p,q){return p[0]-q[0]}),t=0,cs=null,ce=null;
+a.forEach(function(x){if(cs===null){cs=x[0];ce=x[1]}else if(x[0]<=ce){ce=Math.max(ce,x[1])}else{t+=ce-cs;cs=x[0];ce=x[1]}});
+if(cs!==null)t+=ce-cs;return Math.round(t*100)/100}
+function parse(t){var m=t.replace(/%/g,"").trim().match(/^(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)$/i);
+if(!m)return null;var a=+m[1],b=+m[2];if(a>b){var x=a;a=b;b=x}if(b>100)return null;return{from:a,to:b}}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function render(){var el=document.getElementById("bars");
+if(!bars.length){el.innerHTML='<div class="empty">No bars yet. Name one above and press Add bar.</div>';return}
+el.innerHTML=bars.map(function(b){
+var segs=b.ranges.map(function(r){return'<div class="seg" style="left:'+r.from+'%;width:'+(r.to-r.from)+'%;background:'+r.color+'"></div>'}).join("");
+var chips=b.ranges.map(function(r,i){return'<span class="chip"><input type="color" class="cc" value="'+r.color+'" data-act="rc" data-id="'+b.id+'" data-i="'+i+'" aria-label="Color of range '+r.from+' to '+r.to+'">'+r.from+'-'+r.to+'%<button data-act="rr" data-id="'+b.id+'" data-i="'+i+'" aria-label="Remove range '+r.from+' to '+r.to+'">&times;</button></span>'}).join("");
+return'<section class="bar"><div class="head"><h2>'+esc(b.name)+'</h2><span class="total">'+union(b.ranges)+'%</span><button class="ghost" data-act="reset" data-id="'+b.id+'" title="Set all ranges back to #63B0F2">Reset colors</button><button class="ghost" data-act="rb" data-id="'+b.id+'">Delete bar</button></div>'+
+'<div class="track" role="img" aria-label="'+esc(b.name)+' '+union(b.ranges)+' percent filled">'+segs+'</div>'+
+'<div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>'+
+'<div class="add"><input type="color" value="'+(b.nextColor||D)+'" data-act="nc" data-id="'+b.id+'" aria-label="Color for new range" title="Color for new range"><input type="text" id="in'+b.id+'" placeholder="Range, e.g. 50-100" aria-label="Range to fill" data-id="'+b.id+'"><button class="btn" data-act="ar" data-id="'+b.id+'">Fill range</button></div>'+
+'<div class="err" id="er'+b.id+'"></div><div class="chips">'+chips+'</div></section>'}).join("")}
+function addRange(id){var inp=document.getElementById("in"+id),er=document.getElementById("er"+id),r=parse(inp.value);
+if(!r||r.from===r.to){er.textContent="Enter a range from 0 to 100, like 0-25 or 50-100.";return}
+var bb=bars.find(function(b){return b.id==id});r.color=bb.nextColor||D;bb.ranges.push(r);save();render();var n=document.getElementById("in"+id);if(n)n.focus()}
+function addBar(){var n=document.getElementById("newName"),v=n.value.trim()||"Bar "+nid;bars.push({id:nid++,name:v,ranges:[]});n.value="";save();render();
+var l=document.getElementById("in"+bars[bars.length-1].id);if(l)l.focus()}
+document.getElementById("addBar").onclick=addBar;
+document.getElementById("newName").onkeydown=function(e){if(e.key==="Enter")addBar()};
+document.getElementById("bars").addEventListener("click",function(e){var t=e.target.closest("button");if(!t)return;var id=+t.dataset.id,a=t.dataset.act;
+if(a==="ar")addRange(id);
+else if(a==="rr"){bars.find(function(b){return b.id===id}).ranges.splice(+t.dataset.i,1);save();render()}
+else if(a==="reset"){var rb=bars.find(function(b){return b.id===id});rb.nextColor=D;rb.ranges.forEach(function(r){r.color=D});save();render()}
+else if(a==="rb"){bars=bars.filter(function(b){return b.id!==id});save();render()}});
+document.getElementById("bars").addEventListener("input",function(e){var t=e.target,a=t.dataset.act;if(a!=="rc"&&a!=="nc")return;
+var b=bars.find(function(x){return x.id==t.dataset.id});
+if(a==="nc"){b.nextColor=t.value}else{var i=+t.dataset.i;b.ranges[i].color=t.value;t.closest(".bar").querySelectorAll(".seg")[i].style.background=t.value}
+save()});
+document.getElementById("bars").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.dataset.id&&e.target.tagName==="INPUT")addRange(+e.target.dataset.id)});
+render();
+</script>
+</body>
+</html>
